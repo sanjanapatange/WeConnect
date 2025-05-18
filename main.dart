@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'home_page.dart';
+import 'home_page.dart';  
 
 void main() {
   runApp(const MyApp());
@@ -10,7 +10,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
-  
+
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
@@ -38,7 +38,8 @@ class _AuthPageState extends State<AuthPage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController dobController = TextEditingController();
 
-  String baseUrl = 'http://localhost:3000';
+  String baseUrl = 'http://192.168.179.1:3000'; // Replace with your actual local IP
+  // Update if needed
 
   void toggleForm() {
     setState(() {
@@ -49,27 +50,36 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> register() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': usernameController.text,
-        'password': passwordController.text,
-        'email': emailController.text,
-        'phone': phoneController.text,
-        'dob': dobController.text,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Registered Successfully')),
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': usernameController.text.trim(),
+          'password': passwordController.text.trim(),
+          'email': emailController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'dob': dobController.text.trim(),
+        }),
       );
-      toggleForm();
-    } else {
+
+      print('Register Response: ${response.statusCode} - ${response.body}'); // Debugging
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Registered Successfully')),
+        );
+        toggleForm();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Registration Failed')),
+        );
+      }
+    } catch (e) {
+      print('Error during registration: $e'); // Debugging
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Registration Failed')),
+        SnackBar(content: Text('Network error: Unable to connect')),
       );
     }
   }
@@ -77,25 +87,34 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': usernameController.text,
-        'password': passwordController.text,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Login Successful')),
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': usernameController.text.trim(),
+          'password': passwordController.text.trim(),
+        }),
       );
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (_) => HomePage()));
-    } else {
+
+      print('Login Response: ${response.statusCode} - ${response.body}'); // Debugging
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Login Successful')),
+        );
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => HomePage()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Login Failed')),
+        );
+      }
+    } catch (e) {
+      print('Error during login: $e'); // Debugging
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Login Failed')),
+        SnackBar(content: Text('Network error: Unable to connect')),
       );
     }
   }
